@@ -21,12 +21,12 @@ Root: root+=VirtualLine;
 VirtualLine: (comment=Comment_ | command=FullCommand | empty=EMPTY);
 EMPTY: /^\s*\n/;
 //EOL: /[^\\]\n/;
-FullCommand: /[ \t]*/ (pycommand=PyDockerfileCommands | !PyDockerfileCommandsKeywords originalcommand=/(?m)\S(\n|.)*?[^\\]\n/ );
+FullCommand: /[ \t]*/ (pycommand=PyDockerfileCommands | !PyDockerfileCommandsKeywords originalcommand=/\S(\n|.)*?[^\\]\n/ );
 Comment_: /^\s*#.*\n/;
 
-PyDockerfileCommands: PIP;
-PyDockerfileCommandsKeywords: /(?i)PIP/;
-PIP: /(?i)PIP / /(\n|.)*?[^\\]\n/;
+
+PyDockerfileCommandsKeywords: /(?i)(PIP|APT|PYENVS)\b/;
+PyDockerfileCommands: PyDockerfileCommandsKeywords /(\n|.)*?(?<!\\)\n/;
 """
 
 def convert_pydf_to_df(pydf):
@@ -40,14 +40,23 @@ def stringify_pycommand(node):
 
 def preprocess_pycommand(node):
     assert isinstance(node, str)
-    commands = node.replace('\\\n', ' ').split()
-    if commands[0].lower() == 'pip':
-        out = f"RUN pip install {' '.join(commands[1:])}"
-        return textwrap.fill(out, width=70, subsequent_indent='  ',
-                break_long_words=False, break_on_hyphens=False).replace('\n', ' \\\n')
-    else:
-        assert False, node
-    return 
+    command, *args = node.replace('\\\n', ' ').split()
+    command = command.lower()
+    wrap = lambda t: textwrap.fill(t, width=70, subsequent_indent='  ',
+            break_long_words=False, break_on_hyphens=False).strip().replace('\n', ' \\\n') + '\n'
+
+    if command == 'pip':
+        out = f"RUN --mount=type=cache,target=/root/.cache/pip/,id=pip pip install {' '.join(args)}"
+        return wrap(out)
+    elif command == 'apt':
+        out = f"""RUN --mount=type=cache,target=/var/lib/apt,id=apt_lists
+                --mount=type=cache,target=/var/cache/apt,id=apt_archives
+                apt-get update && apt-get install -y {' '.join(args)} """
+        return wrap(out)
+    elif command == 'pyenvs':
+        assert not args , 'PYENVS should have no arguments'
+        return wrap('ENV PIP_NO_PYTHON_VERSION_WARNING=1 PYTHONDONTWRITEBYTECODE=1')
+    assert False, node
 
 @dataclass
 class Stringifier:
@@ -65,7 +74,6 @@ class Stringifier:
             if node.originalcommand: return self(node.originalcommand)
             assert False, node
         else:
-            import ipdb;ipdb.set_trace()
             assert False, node
 
 class VirtualLine(Node): pass
@@ -101,16 +109,23 @@ PiP fred
     stringifier = Stringifier(preprocess=False)
     assert ''.join(stringifier(n) for n in root) == pydf
 
-def test_preprocessor_pip():
+def test_preprocessor_pip_apt():
     pydf = r"""
-FROM alpine
+FROM python:alpine
+PYENVS
 PiP fred lib1 \
         lib2 lib3 lib4 lib5 lib6 lib7 lib8 lib9 lib10 lib11  lib12 lib13 lib14  lib15 lib16 lib17
+APT htop
 """
     OUT = (r'''
-FROM alpine
-RUN pip install fred lib1 lib2 lib3 lib4 lib5 lib6 lib7 lib8 lib9 \
-  lib10 lib11 lib12 lib13 lib14 lib15 lib16 lib17
+FROM python:alpine
+ENV PIP_NO_PYTHON_VERSION_WARNING=1 PYTHONDONTWRITEBYTECODE=1
+RUN --mount=type=cache,target=/root/.cache/pip/,id=pip pip install \
+  fred lib1 lib2 lib3 lib4 lib5 lib6 lib7 lib8 lib9 lib10 lib11 lib12 \
+  lib13 lib14 lib15 lib16 lib17
+RUN --mount=type=cache,target=/var/lib/apt,id=apt_lists \
+  --mount=type=cache,target=/var/cache/apt,id=apt_archives \
+  apt-get update && apt-get install -y htop
 ''')
 
     root = parse_pydf(pydf)
