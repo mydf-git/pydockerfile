@@ -6,7 +6,7 @@ Through some simple macros we take care of a lot of Dockerfile boilerplate and h
 
 ## Features
 
-All normal dockerfile syntax apply, but you can also use the following commands:
+All normal dockerfile syntax apply, but you can also use the following commands (case insensitive):
 
 ### `PIP [args]...`
 
@@ -16,22 +16,22 @@ It is also shorter to type than `RUN pip install`
 
 ### `PIPENVS`
 
-PIPENVS is just a fast way to set common python env variables. Now it is equivalent to:
+`PIPENVS` is just a fast way to set common python env variables. Now it is equivalent to:
 
     ENV PIP_NO_PYTHON_VERSION_WARNING=1 PYTHONDONTWRITEBYTECODE=1
 
 ### `APT [args]...`
 
 The `APT` command triggers a `RUN apt-get update && apt-get install -y [args]...` but using `--mount=type=cache` flag to
-automatically reuse apt cache between builds and also keep cache out of your docker image.
-It is also shorter to type, and you will never forget that `-y` again :)
+automatically reuse apt cache between builds. It also keeps the cache out of your docker image, reducing its size.
+Finally, its also shorter to type. You will never forget that `-y` again :)
 
 ## Example
 
     # syntax=mydf/pydockerfile:1
     FROM python
     PYENVS
-    APT ncdu
+    APT curl
     PIP requests
 
 is a valid and concise Dockerfile that demonstrates all our features! To test it just copy it and run `DOCKER_BUILDKIT=1 docker build .`
