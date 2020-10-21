@@ -1,6 +1,6 @@
 # mydf/pydockerfile
 
-mydf/pydockerfile is an add on to the Dockerfile syntax focused on building small and fast python images powered by [mydf/mydockerfile](https://github.com/mydf-git/mydockerfile)!
+mydf/pydockerfile is an add on to the Dockerfile syntax focused on building small and fast python images.
 
 Through some simple macros we take care of a lot of Dockerfile boilerplate and help you to be concise and precise.
 
@@ -11,12 +11,12 @@ All normal dockerfile syntax apply, but you can also use the following commands:
 ### `PIP [args]...`
 
 The `PIP` command triggers a `RUN pip install [args]...` but using `--mount=type=cache` flag to
-automatically reuse pip cache between builds and also keep cache out of your docker image.
-It is also shorter to type than `pip install`
+automatically reuse pip cache between builds while also keeping cache files out of your docker image.
+It is also shorter to type than `RUN pip install`
 
 ### `PIPENVS`
 
-PIPENVS is just a fast way to set common python env variables. Now it is equivalent to
+PIPENVS is just a fast way to set common python env variables. Now it is equivalent to:
 
     ENV PIP_NO_PYTHON_VERSION_WARNING=1 PYTHONDONTWRITEBYTECODE=1
 
@@ -57,3 +57,6 @@ valid version. If you want to see the intermediary dockerfile that is being gene
 
     docker run --rm -i --entrypoint= mydf:pydockerfile:1 /preprocessor < ./Dockerfile
 
+## Links
+
+Powered by [mydf/mydockerfile](https://github.com/mydf-git/mydockerfile)! A simple way to make a Dockerfile syntax!
