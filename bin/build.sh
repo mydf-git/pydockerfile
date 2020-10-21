@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 cd $(git rev-parse --show-toplevel)
 
-VERSION=1
+VERSION=`cat VERSION`
 
-docker build . -t mydf/pydockerfile:$VERSION
+docker build . -t mydf/pydockerfile:$VERSION --squash

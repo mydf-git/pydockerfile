@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from textx import metamodel_from_str, get_children_of_type
+from textx.exceptions import TextXSyntaxError
 from dataclasses import dataclass
 import textwrap
 
@@ -81,7 +82,11 @@ class FullCommand(Node): pass
 
 def parse_pydf(pydf):
     MM = metamodel_from_str(GRAMMAR, skipws=False, debug=False, classes=[VirtualLine, FullCommand, ])
-    model = MM.model_from_str(pydf)
+    try:
+        model = MM.model_from_str(pydf)
+    except TextXSyntaxError as e:
+        sys.stderr.write(f"ERROR at Dockerfile {pydf!r} - {e} \n")
+        exit(1)
     root = model.root
     return root
 
