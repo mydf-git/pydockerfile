@@ -29,7 +29,7 @@ It will build something equivalent to:
 
 ## Features
 
-All normal dockerfile syntax apply, but you can also use the following commands (case insensitive):
+All [normal (+ experimental) dockerfile syntax](https://github.com/moby/buildkit/blob/dockerfile/1.1.7-experimental/frontend/dockerfile/docs/experimental.md) is availabe, but you can also use the following commands (case insensitive):
 
 ### `PIP [args]...`
 
