@@ -4,6 +4,29 @@ mydf/pydockerfile is an add on to the Dockerfile syntax focused on building smal
 
 Through some simple macros we take care of a lot of Dockerfile boilerplate and help you to be concise and precise.
 
+## Example
+
+    # syntax=mydf/pydockerfile:1
+    FROM python
+    PYENVS
+    APT curl
+    PIP requests
+
+is a valid and concise Dockerfile that demonstrates all our features! To test it just copy it to a `Dockerfile` and run `DOCKER_BUILDKIT=1 docker build .`
+
+It will build something equivalent to:
+
+    # syntax=mydf/pydockerfile:1
+
+    FROM python
+    ENV PIP_NO_PYTHON_VERSION_WARNING=1 PYTHONDONTWRITEBYTECODE=1
+    RUN --mount=type=cache,target=/var/lib/apt,id=apt_lists \
+      --mount=type=cache,target=/var/cache/apt,id=apt_archives \
+      apt-get update && apt-get install -y curl
+    RUN --mount=type=cache,target=/root/.cache/pip/,id=pip pip install \
+      requests
+
+
 ## Features
 
 All normal dockerfile syntax apply, but you can also use the following commands (case insensitive):
@@ -26,16 +49,6 @@ The `APT` command triggers a `RUN apt-get update && apt-get install -y [args]...
 automatically reuse apt cache between builds. It also keeps the cache out of your docker image, reducing its size.
 Finally, its also shorter to type. You will never forget that `-y` again :)
 
-## Example
-
-    # syntax=mydf/pydockerfile:1
-    FROM python
-    PYENVS
-    APT curl
-    PIP requests
-
-is a valid and concise Dockerfile that demonstrates all our features! To test it just copy it and run `DOCKER_BUILDKIT=1 docker build .`
-
 ## Installing
 
 Custom synaxes are supported in **all docker installations** since 18.09, you just need to
@@ -56,6 +69,10 @@ pydockerfile works by preprocessing your Dockerfile into a longer, ["dockerfile:
 valid version. If you want to see the intermediary dockerfile that is being generated just run
 
     docker run --rm -i --entrypoint= mydf:pydockerfile:1 /preprocessor < ./Dockerfile
+
+## Colaboration
+
+I'm very open to suggestions, please leave an issue to open discussions or bug reports!
 
 ## Links
 
